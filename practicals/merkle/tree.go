@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 // A Merkle tree turns a whole list of values into a single digest, in a way
 // that lets you prove afterwards that one particular value was in the list,
@@ -66,7 +69,35 @@ func NewTree(values [][]byte) *Tree {
 		panic("a Merkle tree needs at least one value")
 	}
 	t := &Tree{values: values}
-	// TODO: hash the leaves, pad, then fold the levels (section 5)
+
+	// Compute the number of levels
+	level := int(math.Log2(float64(len(values))))
+	n := int(math.Pow(2, float64(level)))
+	if len(values) > n {
+		level++
+		n *= 2
+	}
+
+	t.levels = make([][][]byte, level+1)
+
+	// Fills the leaves level
+	for i := 0; i < n; i++ {
+		if i < len(values) {
+			t.levels[0] = append(t.levels[0], HashLeaf(values[i]))
+		} else {
+			t.levels[0] = append(t.levels[0], PadValue)
+		}
+	}
+
+	// Fill the other levels
+	size := len(t.levels[0])
+	for i := 1; i < level+1; i++ {
+		for j := 0; j < size; j += 2 {
+			t.levels[i] = append(t.levels[i], HashInternal(t.levels[i-1][j], t.levels[i-1][j+1]))
+		}
+		size /= 2
+	}
+
 	return t
 }
 
