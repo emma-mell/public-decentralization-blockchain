@@ -125,6 +125,13 @@ func (t *Tree) Prove(pos int) (*Proof, error) {
 		return nil, fmt.Errorf("no leaf at position %d", pos)
 	}
 	proof := &Proof{Leaf: t.values[pos], Pos: pos}
-	// TODO: collect the siblings, bottom-up (section 6)
+
+	cur_pos := pos
+
+	for i := 0; i < t.Height(); i++ {
+		proof.Hashes = append(proof.Hashes, t.levels[i][cur_pos^1])
+		cur_pos = cur_pos >> 1
+	}
+
 	return proof, nil
 }
