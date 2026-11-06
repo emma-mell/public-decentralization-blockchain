@@ -4,6 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+
+	"google.golang.org/protobuf/proto"
 )
 
 // Tx is a transaction, as the mempool sees it, that is an opaque sequence of bytes.
@@ -30,7 +32,15 @@ func (k TxKey) String() string {
 //
 // [Task] Fill a Transfer and encode it with proto.Marshal. Encoding such a simple message cannot fail, Call panic() with the error if it does.
 func NewTransfer(from, to string, amount uint64) Tx {
-	return nil // TODO: encode a Transfer with proto.Marshal (section 4)
+	b, err := proto.Marshal(&Transfer{
+		From:   from,
+		To:     to,
+		Amount: amount,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 // DecodeTransfer decodes the Transfer carried by a transaction. The bytes
@@ -39,7 +49,9 @@ func NewTransfer(from, to string, amount uint64) Tx {
 //
 // [Task] Decode tx with proto.Unmarshal.
 func DecodeTransfer(tx Tx) (*Transfer, error) {
-	return nil, fmt.Errorf("TODO: decode a Transfer with proto.Unmarshal (section 4)")
+	var m Transfer
+	e := proto.Unmarshal(tx, &m)
+	return &m, e
 }
 
 // describe returns a readable form of a transaction, for the logs.

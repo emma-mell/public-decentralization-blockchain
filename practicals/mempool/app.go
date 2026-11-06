@@ -46,9 +46,26 @@ func NewBank(genesis map[string]uint64) *Bank {
 // the sender holds at least that amount. An account that does not appear
 // in state holds 0.
 //
-// [Task] Implement it.
+// Decode the transfer, check it, then move the amount.
 func apply(state map[string]uint64, tx Tx) bool {
-	return false // TODO: decode the transfer, check it, then move the amount (section 5)
+	m, e := DecodeTransfer(tx)
+	if e != nil {
+		return false
+	}
+
+	balanceFrom, okFrom := state[m.From]
+	if !okFrom {
+		return false
+	}
+
+	if m.Amount <= 0 || m.Amount > balanceFrom {
+		return false
+	}
+
+	state[m.From] -= m.Amount
+	state[m.To] += m.Amount
+
+	return true
 }
 
 // IsValid validates tx against the check state, and applies it there.

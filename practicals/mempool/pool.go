@@ -80,7 +80,22 @@ func (p *Pool) Contains(key TxKey) bool {
 func (p *Pool) Insert(tx Tx) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return nil // TODO: dedup with the map, p.app.IsValid, then store in the list and the map (section 6)
+
+	_, isIn := p.txs[tx.Key()]
+	if isIn {
+		return ErrTxInPool
+	}
+
+	b := p.app.IsValid(tx)
+	if !b {
+		return ErrInvalidTx
+	}
+
+	e := p.fifo.PushBack(tx)
+
+	p.txs[tx.Key()] = e
+
+	return nil
 }
 
 // Remove deletes a transaction from the pool. It returns true if the pool
@@ -126,5 +141,12 @@ func (p *Pool) Update(block []Tx) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.app.Commit(block)
-	// TODO: remove the transactions of the block, then recheck the others (section 7)
+
+	for i := 0; i < len(block); i++ {
+		p.Remove(block[i].Key())
+	}
+
+	for i := 0; i < len(p.fifo); i++ {
+
+	}
 }
